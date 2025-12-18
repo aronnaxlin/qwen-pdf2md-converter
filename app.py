@@ -31,52 +31,57 @@ def ensure_poppler_exists():
     base_dir = Path(__file__).parent
     poppler_dir = base_dir / "poppler"
     
-    # 检查目标文件夹是否存在
-    if poppler_dir.exists():
+    # 如果 poppler 文件夹已经存在且内部结构正确，直接返回
+    if poppler_dir.exists() and (poppler_dir / "Library" / "bin").exists():
         return
         
-    st.warning("检测到环境中缺少 PDF 处理引擎 (Poppler)，正在自动配置...")
+    st.warning("🚀 正在为您自动配置 PDF 处理引擎 (Poppler)，这可能需要 1-2 分钟...")
     
     try:
-        # 1. 下载
-        with st.spinner("正在从远程服务器下载组件 (约 40MB)..."):
+        # 1. 清理可能存在的残余
+        zip_path = base_dir / "poppler_temp.zip"
+        if zip_path.exists(): os.remove(zip_path)
+        
+        # 2. 下载压缩包
+        with st.spinner("正在从 GitHub 下载组件..."):
             response = requests.get(POPPLER_DOWNLOAD_URL, stream=True, timeout=60)
-            zip_path = base_dir / "poppler_temp.zip"
             with open(zip_path, "wb") as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
             
-        # 2. 解压
-        with st.spinner("正在解压并校验目录结构..."):
+        # 3. 解压
+        with st.spinner("正在解压并重组目录..."):
             with zipfile.ZipFile(zip_path, 'r') as zip_ref:
                 zip_ref.extractall(base_dir)
             
-            # 3. 精确重命名逻辑
-            # 根据你的反馈，解压出的文件夹名是 poppler-25.12.0
-            extracted_folder = base_dir / "poppler-25.12.0"
+            # --- 智能寻找解压后的目录 ---
+            # 遍历当前目录，寻找那个包含 'Library' 的新文件夹
+            found_folder = None
+            for p in base_dir.iterdir():
+                if p.is_dir() and (p / "Library").exists() and p.name != "poppler":
+                    found_folder = p
+                    break
             
-            if extracted_folder.exists():
-                # 如果当前目录下已经有个叫 poppler 的空文件夹或旧文件夹，先删掉
+            if found_folder:
+                # 如果已存在名为 poppler 的旧文件夹，先改名或删除
                 if poppler_dir.exists():
                     shutil.rmtree(poppler_dir)
-                # 重新命名为 poppler
-                extracted_folder.rename(poppler_dir)
+                # 将找到的文件夹重命名为 poppler
+                found_folder.rename(poppler_dir)
             else:
-                # 备选方案：如果名字不对，搜索一下包含 Library 的文件夹
-                for p in base_dir.iterdir():
-                    if p.is_dir() and (p / "Library").exists() and p.name != "poppler":
-                        p.rename(poppler_dir)
-                        break
+                # 如果没找到(可能是扁平解压)，尝试建立 poppler 目录
+                st.error("无法识别解压后的目录结构，请手动检查。")
                 
-        # 4. 清理
-        if zip_path.exists():
-            os.remove(zip_path)
-            
-        st.success("✅ PDF 引擎配置成功！")
+        # 4. 最终清理
+        if zip_path.exists(): os.remove(zip_path)
+        st.success("✅ 环境配置成功！正在继续...")
+        st.rerun() # 强制刷新一次以应用新路径
+
     except Exception as e:
-        st.error(f"❌ 自动配置失败: {e}")
-        st.info("请手动将 Poppler 解压到项目目录下的 poppler 文件夹中。")
+        st.error(f"❌ 自动配置失败: {str(e)}")
+        st.info("建议手动下载并解压到项目根目录下的 poppler 文件夹中。")
         st.stop()
+
 
 def get_poppler_path():
     """获取 Poppler 路径"""
