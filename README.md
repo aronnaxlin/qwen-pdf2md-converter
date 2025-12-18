@@ -40,7 +40,7 @@
 2.  获取 [阿里云百炼 API Key](https://bailian.console.aliyun.com/)。
 
 ### 💻 Windows 用户
-本项目已内置便携版 `Poppler` 组件，**解压即用**。
+本项目已内置便携版 `Poppler` 组件下载功能，**解压即用**。
 
 1.  **首次运行**（初始化环境）：
     双击运行 `setup_windows.bat`
@@ -76,8 +76,7 @@ Qwen-OCR-Pipeline/
 ├── run_windows.bat         # Windows 一键运行脚本
 ├── setup_unix.sh           # macOS/Linux 环境配置脚本
 ├── run_unix.sh             # macOS/Linux 启动脚本
-├── poppler/                # [Windows专用] 内置 PDF 处理引擎
-│   └── Library/bin/        
+├── poppler                 # [Windows专用] 自动下载 PDF 处理引擎    
 └── README.md               
 
 ```

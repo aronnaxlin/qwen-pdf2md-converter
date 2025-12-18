@@ -9,6 +9,11 @@ from pdf2image import convert_from_bytes
 from dashscope import MultiModalConversation, Generation
 import dashscope
 from http import HTTPStatus
+import zipfile
+import requests
+import shutil
+
+POPPLER_DOWNLOAD_URL = "https://github.com/oschwartz10612/poppler-windows/releases/download/v25.12.0-0/Release-25.12.0-0.zip"
 
 # ================= 页面配置 =================
 st.set_page_config(
@@ -18,22 +23,61 @@ st.set_page_config(
 )
 
 # ================= 工具函数 =================
-
-def get_poppler_path():
-    """根据操作系统智能获取 Poppler 路径"""
+def ensure_poppler_exists():
+    """自动化环境检查与下载"""
     curr_system = platform.system()
+    if curr_system != "Windows":
+        return # 非 Windows 系统不需要此逻辑
+        
+    base_dir = Path(__file__).parent
+    poppler_dir = base_dir / "poppler"
     
+    # 如果已经存在，直接返回
+    if poppler_dir.exists():
+        return
+        
+    # 如果不存在，启动下载
+    st.warning("检测到环境中缺少 PDF 处理引擎 (Poppler)，正在为您自动配置，请稍后...")
+    
+    try:
+        # 1. 下载压缩包
+        with st.spinner("正在从远程服务器获取组件..."):
+            response = requests.get(POPPLER_DOWNLOAD_URL, stream=True, timeout=30)
+            zip_path = base_dir / "poppler_temp.zip"
+            with open(zip_path, "wb") as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            
+        # 2. 解压
+        with st.spinner("正在解压组件..."):
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                zip_ref.extractall(base_dir)
+            
+            # 兼容性处理：有些压缩包解压出来会有个长长的文件夹名，我们重命名为 poppler
+            # 假设解压出的文件夹叫 Release-24.08.0-0
+            extracted_dir = base_dir / "poppler-25.12.0"
+            if extracted_dir.exists():
+                extracted_dir.rename(poppler_dir)
+                
+        # 3. 清理临时文件
+        if zip_path.exists():
+            os.remove(zip_path)
+            
+        st.success("✅ PDF 引擎配置成功！")
+    except Exception as e:
+        st.error(f"❌ 环境自动化配置失败: {e}")
+        st.info("请手动下载 Poppler 并解压到项目根目录下的 poppler 文件夹。")
+        st.stop()
+
+# 修改原有的 get_poppler_path
+def get_poppler_path():
+    curr_system = platform.system()
     if curr_system == "Windows":
-        # Windows: 使用项目目录下内置的 poppler 文件夹
+        ensure_poppler_exists() # 先确保它存在
         poppler_bin = Path(__file__).parent / "poppler" / "Library" / "bin"
-        if poppler_bin.exists():
-            return str(poppler_bin)
-        else:
-            return "MISSING" # 特殊标记，用于在主程序中报错
-    
-    # macOS 和 Linux：返回 None，pdf2image 会自动去系统环境变量 PATH 中查找
-    # 用户需通过 brew install poppler (macOS) 或 apt install poppler-utils (Linux) 安装
+        return str(poppler_bin) if poppler_bin.exists() else None
     return None
+
 
 def encode_image_to_base64(image):
     """将 PIL 图片对象转换为 Base64 字符串"""

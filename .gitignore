@@ -67,3 +67,8 @@ results/
 # Local config files
 config.local
 *.local
+
+
+# 忽略二进制引擎
+poppler/
+poppler_temp.zip
