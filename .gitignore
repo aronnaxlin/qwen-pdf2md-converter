@@ -1,0 +1,69 @@
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+.env/
+.envs/
+
+# Python
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+.nosync
+.directory
+*.nfs*
+
+# Output files (PDF and MD)
+*.pdf
+*.md
+
+# But don't ignore specific README files
+!README.md
+!README-EN.md
+
+
+# Input files directory if exists
+input/
+inputs/
+
+# Output files directory if exists
+output/
+outputs/
+results/
+
+# Local config files
+config.local
+*.local
